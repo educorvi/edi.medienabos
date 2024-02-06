@@ -38,3 +38,12 @@ class Abonnent(BaseModel):
     versand_plz : Optional[str] = Field(title=u"Versandadresse: Postleitzahl, optional inkl. Länderkennung, z.B. DE-90763")
     versand_ort : Optional[str] = Field(title=u"Versandadresse: Ort")
     medien : dict = Field(title="Dictionary mit Angaben zu den abonnierten Medien")
+
+class ResultModel(BaseModel):
+    """
+    Datenmodell für die Rückgabe an den Frontend
+    """
+    httpstatus: int = Field(title=u"HTTP-Statuscode")
+    message: str = Field(title=u"Nachricht für den Frontend zur Einblendung für die Benutzer:innen")
+    errormessage: Optional[str] = Field(title=u"Errormessage bzw. serverseitige Exception zur Information des Frontend-Administrators", default=None)
+    retcode: Optional[str] = Field(title=u"Returncode zur Auslieferung an die Benutzer:innen z.B. zum Check der E-Mail", default=None)

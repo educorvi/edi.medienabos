@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from models import Abonnent, Abo, Base
+from models import Abonnent, Abo, Base, ResultModel
 from services import insert_abo_data
 from datetime import datetime
 
@@ -13,7 +13,7 @@ app = FastAPI(
 def welcome():
     return "BGETEM Abonnentenverwaltung"
 
-@app.post("/{api_version}/abo", response_model=Abonnent)
+@app.post("/{api_version}/abo", response_model=ResultModel)
 def send_abonnement(api_version:str, data:Abonnent):
     """
     Serviceendpunkt für Benutzer:innen von per Login
@@ -28,6 +28,6 @@ def send_abonnement(api_version:str, data:Abonnent):
         now = datetime.now()
         datadict['refresh'] = now # ergänzt das Dict um den im Backend gebildeten Wert für refresh
         ret = insert_abo_data(datadict)
-        return ret #Wir geben das Request-Model als Datenmodell zurück
+        return ret #Wir geben das Result-Model als Datenmodell zurück
     else:
         raise HTTPException(status_code=404, detail="api_version couldn't be found")
