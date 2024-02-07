@@ -20,8 +20,30 @@ class Abo(Base):
     versand_strhnr = Column(String, nullable=True)
     versand_plz = Column(String, nullable=True)
     versand_ort = Column(String, nullable=True)
+    etem = Column(Integer, nullable=False)
+    profi = Column(Integer, nullable=False)
     medien = Column(JSON, nullable=True)
     refresh = Column(DateTime, nullable=False)
+
+class Subscriber(Base):
+    __tablename__ = 'subscribers'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    untnr = Column(String, nullable=True)
+    anrede = Column(String, nullable=False)
+    titel = Column(String, nullable=True)
+    vorname = Column(String, nullable=False)
+    name = Column(String, nullable=False)
+    email = Column(String(255), nullable=False, unique=True)
+    versand_name = Column(String, nullable=True)
+    versand_strhnr = Column(String, nullable=True)
+    versand_plz = Column(String, nullable=True)
+    versand_ort = Column(String, nullable=True)
+    etem = Column(Integer, nullable=False)
+    profi = Column(Integer, nullable=False)
+    medien = Column(JSON, nullable=True)
+    refresh = Column(DateTime, nullable=False)
+    retcode = Column(String, nullable=False)
 
 class Abonnent(BaseModel):
     """
@@ -37,6 +59,8 @@ class Abonnent(BaseModel):
     versand_strhnr : Optional[str] = Field(title=u"Versandadresse: Straße und Hausnummer", default=None)
     versand_plz : Optional[str] = Field(title=u"Versandadresse: Postleitzahl, optional inkl. Länderkennung, z.B. DE-90763", default=None)
     versand_ort : Optional[str] = Field(title=u"Versandadresse: Ort", default=None)
+    etem : int = Field(title="Anzahl der Abonnements der Zeitschrift etem", default=0) 
+    profi : int = Field(title="Anzahl der Abonnements der Zeitschrift profi", default=0) 
     medien : dict = Field(title="Dictionary mit Angaben zu den abonnierten Medien")
 
 class ResultModel(BaseModel):

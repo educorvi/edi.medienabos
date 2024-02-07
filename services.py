@@ -1,5 +1,5 @@
 import os
-from models import Base, Abo, ResultModel
+from models import Base, Abo, Subscriber, ResultModel
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
@@ -31,6 +31,30 @@ def insert_abo_data(abo_data):
     except SQLAlchemyError as e:
         session.rollback()
         ret = ResultModel(httpstatus = 500, 
+                          message = "Fehler bei der Speicherung Ihrer Daten, bitte versuchen Sie es zu einem späteren Zeitpunkt noch einmal",
+                          errormessage = f"Failed to insert data {e}")
+        return ret
+
+    finally:
+        if session:
+            session.close()
+
+
+def insert_subscriber_data(abo_data):
+
+    try:
+        session = Session()
+        user = Subscriber(**abo_data)
+        session.add(user)
+        session.commit()
+        ret = ResultModel(httpstatus = 200,
+                          message = "Ihre Daten wurden erfolgreich in unserer Datenbank gespeichert.",
+                          retcode = abo_data.get('retcode'))
+        return ret
+
+    except SQLAlchemyError as e:
+        session.rollback()
+        ret = ResultModel(httpstatus = 500,
                           message = "Fehler bei der Speicherung Ihrer Daten, bitte versuchen Sie es zu einem späteren Zeitpunkt noch einmal",
                           errormessage = f"Failed to insert data {e}")
         return ret
