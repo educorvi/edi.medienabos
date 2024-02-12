@@ -52,14 +52,14 @@ def send_subscriber(api_version:str, data:Abonnent):
     else:
         raise HTTPException(status_code=404, detail="api_version couldn't be found")
 
-@app.get("/{api_version}/checksubscription/{retcode}", response_class=HTMLResponse)
-def check_subscriber(api_version:str, retcode:str):
+@app.get("/checksubscription/{retcode}", response_class=HTMLResponse)
+def check_subscriber(retcode:str):
     """
     Serviceendpunkt für Benutzer:innen zur Bestätigung des Abonnements via Link
     """
     checker = check_subscription(retcode)
     if checker:
-        return thankyou
+        return return_template(checker)
     else:
         raise HTTPException(status_code=404, detail="The returncode couldn't be found")
 

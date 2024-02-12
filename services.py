@@ -97,12 +97,15 @@ def check_subscription(retcode):
 
     session = Session()
     subscriber = session.query(Subscriber).filter(Subscriber.retcode == retcode).first()
-    datadict = vars(subscriber)
-    del datadict['retcode']
-    del datadict['_sa_instance_state']
-    data = insert_abo_data(datadict)
-    if data.httpstatus == 200:
-        return True
+    session.close()
+    if subscriber:
+        datadict = vars(subscriber)
+        del datadict['id']
+        del datadict['retcode']
+        del datadict['_sa_instance_state']
+        data = insert_abo_data(datadict)
+        if data.httpstatus == 200:
+            return 'thankyou'
     return False
 
 def insert_marker_data(marker_data):

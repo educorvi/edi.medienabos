@@ -110,8 +110,8 @@ class Abonnent(BaseModel):
     Datenmodell für die Abonnementverwaltung
     """
     untnr: Optional[str] = Field(title=u"Unternehmensnummer", default=None)
-    anrede: Literal['Frau', 'Herr', 'keine Anrede'] = Field(title="Akademischer Titel")
-    titel: Union[Literal['Dr.', 'Prof.'], None] = Field(title="Akademischer Titel", default=None)
+    anrede: Literal['Frau', 'Herr', 'keine Anrede'] = Field(title="Anrede")
+    titel: Optional[Literal["Dr.", "Prof."]] = Field(title="Akademischer Titel", default=None)
     vorname : str = Field(title=u"Vorname des Verantwortlichen für die Applikation")
     name : str = Field(title=u"Name des Verantwortlichen für die Applikation")
     email : EmailStr = Field(title=u"Versandadresse: E-Mail-Adresse")
