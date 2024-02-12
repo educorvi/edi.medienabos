@@ -65,7 +65,7 @@ def check_subscriber(retcode:str):
         raise HTTPException(status_code=404, detail="The returncode couldn't be found")
 
 @app.post("/{api_version}/marker/{method}", response_model=ResultModel)
-def send_marker(api_version:str, method:str, data:Abonnent):
+def send_marker(api_version:str, method:Literal['delete', 'update'], data:Abonnent):
     """
     Serviceendpunkt für Benutzer:innen die über anonyme Portale, wie z.B.
     Website, Präventionsportal kommen und ihr Abonnement löschen oder aktualisieren
@@ -89,6 +89,8 @@ def send_marker(api_version:str, method:str, data:Abonnent):
 def check_marker(retcode:str):
     """
     Serviceendpunkt für Benutzer:innen zur Bestätigung der Löschung oder Aktualisierung
+
+    retcode - Returncode der vorher an die zur Vormerkung der Änderung versendet wurde
     """
     checker = check_marking(retcode)
     if checker:
