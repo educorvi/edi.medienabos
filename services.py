@@ -1,7 +1,7 @@
 import os
 import hashlib
 import random
-from models import Base, Abo, Subscriber, ResultModel
+from models import Base, Abo, Subscriber, ResultModel, Marker, Refresher
 from sqlalchemy import create_engine, select, inspect
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
@@ -22,6 +22,10 @@ def generate_retcode(email):
     return retcode
 
 def send_subscriber_email(abo_data):
+    print('in dieser Funktion wird die E-Mail gesendet')
+    #TODO Implementierung einer Funktion für das Senden einer E-Mail
+
+def send_marker_email(abo_data):
     print('in dieser Funktion wird die E-Mail gesendet')
     #TODO Implementierung einer Funktion für das Senden einer E-Mail
 
@@ -111,25 +115,11 @@ def check_subscription(retcode):
 def insert_marker_data(marker_data):
 
     session = Session()
-
     marker = session.query(Marker).filter(Marker.email == marker_data['email']).all()
     if marker:
         ret = ResultModel(httpstatus = 400,
                           message = """Für die angegebene E-Mail-Adresse wurde bereits eine Änderungsmitteilung vorgemerkt 
                                        Bitte prüfen Sie Ihr E-Mail-Postfach auf den Erhalt eines Bestätigungslinks""")
-        session.close()
-        return ret
-    
-    subscriber = session.query(Subscriber).filter(Subscriber.email == marker_data['email']).all()
-    if subscriber:
-        message = "Für die angegebene E-Mail-Adresse haben wir die Vormerkung für ein Abonnement registriert."
-        if marker_data['method'] == 'delete':
-            message += "Die Löschung der Vormerkung erfolgt automatisch nach 24 Stunden. Ihrerseits ist keine weitere Aktion erforderlich."
-        else:
-            message += "Bitte klicken Sie zunächst auf den Aktivierungslink in der Bestätigungs-E-Mail\
-                        und senden uns dann erneut Ihren Änderungswunsch"
-        ret = ResultModel(httpstatus = 400,
-                          message = message)
         session.close()
         return ret
     
@@ -182,23 +172,26 @@ def check_marking(retcode):
 
     session = Session()
     marker = session.query(Marker).filter(Marker.retcode == retcode).first()
-    email = marker.email
-    method = marker.method
-    object_to_delete = session.query(Abo).filter(Abo.email == email).first()
-    if object_to_delete:
-        session.delete(object_to_delete)
+    if marker:
+        email = marker.email
+        method = marker.method
+        datadict = vars(marker)
+        object_to_delete = session.query(Abo).filter(Abo.email == email).first()
+        if object_to_delete:
+            session.delete(object_to_delete)
+        session.delete(marker)
         session.commit()
         session.close()
-    datadict = vars(marker)
-    del datadict['retcode']
-    del datadict['method']
-    del datadict['_sa_instance_state']
-    if method == 'update':
-        data = insert_abo_data(datadict)
-        if data.httpstatus == 200:
+        del datadict['id']
+        del datadict['retcode']
+        del datadict['method']
+        del datadict['_sa_instance_state']
+        if method == 'update':
+            data = insert_abo_data(datadict)
+            if data.httpstatus == 200:
+                return method
+        elif method == 'delete':
             return method
-    elif method == 'delete':
-        return method
     return False
 
 def check_refresh(method, retcode, now):
