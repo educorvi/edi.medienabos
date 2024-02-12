@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
+from typing import Literal
 from models import Abonnent, Abo, Base, ResultModel
 from services import insert_abo_data, insert_subscriber_data, check_subscription, insert_marker_data
 from services import check_marking, check_refresh, return_template
@@ -94,17 +95,16 @@ def check_marker(retcode:str):
         return return_template(checker)
     raise HTTPException(status_code=404, detail="The returncode couldn't be found")
 
-@app.get("/{api_version}/refresher/{method}/{retcode}", response_class=HTMLResponse)
-def refresh_abo(api_version:str, method:str, retcode:str):
+@app.get("/refresher/{method}/{retcode}", response_class=HTMLResponse)
+def refresh_abo(method:Literal['delete', 'refresh'], retcode:str):
     """
     Serviceendpunkt für Benutzer:innen zum Refresh oder zur Löschung des Abonnements
 
-    api_version - Version der OpenAPI
     method - delete|refresh
     retcode - returncode, der vorher per E-Mail ausgeliefert wurde
     """
     now = datetime.now()
     refresher = check_refresh(method, retcode, now)
     if refresher:
-        return return_template(refesher)
+        return return_template(refresher)
     raise HTTPException(status_code=404, detail="The returncode couldn't be found")

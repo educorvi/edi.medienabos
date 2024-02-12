@@ -195,22 +195,28 @@ def check_marking(retcode):
     return False
 
 def check_refresh(method, retcode, now):
+    """
+    Die E-Mail für check_refresh wird aus einem Cron-Script heraus erzeugt, das
+    jeden Tag einmal läuft und alte Abos in die Refresh-Tabelle kopiert um zu
+    signalisieren, dass diese Datenbankeinträge auf eine Auffrischung warten.
+    """
     session = Session()
-    refresher = session.query(Refresher).filter(Refresher.retcode == retcode).first()
-    email = refresher.email
+    #refresher = session.query(Refresher).filter(Refresher.retcode == retcode).first()
+    #email = refresher.email
+    email = 'lwalther@novareto.de'
     original = session.query(Abo).filter(Abo.email == email).first()
     if method == 'delete':
-        object_to_delete = session.query(Abo).filter(Abo.email == email).first()
-        if object_to_delete:
-            session.delete(object_to_delete)
-            session.delete(refresher)
+        if original:
+            session.delete(original)
+            #session.delete(refresher)
             session.commit()
+            session.close()
             return method
     elif method == 'refresh':
         original.refresh = now
         session.commit()
+        session.close()
         return method   
-    session.close()
     return False
 
 def return_template(method):
