@@ -92,3 +92,134 @@ def insert_subscriber_data(abo_data):
     finally:
         if session:
             session.close()
+
+def check_subscription(retcode):
+
+    session = Session()
+    subscriber = session.query(Subscriber).filter(Subscriber.retcode == retcode).first()
+    datadict = vars(subscriber)
+    del datadict['retcode']
+    del datadict['_sa_instance_state']
+    data = insert_abo_data(datadict)
+    if data.httpstatus == 200:
+        return True
+    return False
+
+def insert_marker_data(marker_data):
+
+    session = Session()
+
+    marker = session.query(Marker).filter(Marker.email == marker_data['email']).all()
+    if marker:
+        ret = ResultModel(httpstatus = 400,
+                          message = """Für die angegebene E-Mail-Adresse wurde bereits eine Änderungsmitteilung vorgemerkt 
+                                       Bitte prüfen Sie Ihr E-Mail-Postfach auf den Erhalt eines Bestätigungslinks""")
+        session.close()
+        return ret
+    
+    subscriber = session.query(Subscriber).filter(Subscriber.email == marker_data['email']).all()
+    if subscriber:
+        message = "Für die angegebene E-Mail-Adresse haben wir die Vormerkung für ein Abonnement registriert."
+        if marker_data['method'] == 'delete':
+            message += "Die Löschung der Vormerkung erfolgt automatisch nach 24 Stunden. Ihrerseits ist keine weitere Aktion erforderlich."
+        else:
+            message += "Bitte klicken Sie zunächst auf den Aktivierungslink in der Bestätigungs-E-Mail\
+                        und senden uns dann erneut Ihren Änderungswunsch"
+        ret = ResultModel(httpstatus = 400,
+                          message = message)
+        session.close()
+        return ret
+    
+    abonnent = session.query(Abo).filter(Abo.email == marker_data['email']).all()
+    if not abonnent:
+        message = "Für die von Ihnen angegebene E-Mail-Adresse existiert aktuell kein Medienabonnement"
+        ret = ResultModel(httpstatus = 400,
+                          message = message)
+        session.close()
+        return ret
+
+    retcode = generate_retcode(marker_data['email'])
+    marker_data['retcode'] = retcode
+
+    message_delete = """Wir haben Ihren Wunsch zur Beendigung des Abonnenments vorgemerkt. Sie erhalten
+                        jetzt eine E-Mail mit einem Bestätigungslink. Bitte klicken Sie auf den Link
+                        um die Beendigung Ihres Abonnements zu bestätigen."""
+
+    message_update = """Wir haben Ihren Wunsch zur Aktualisierung des Abonnements vorgemerkt. Sie erhalten
+                        jetzt eine E-Mail mit einem Bestätigungslink. Bitte klicken Sie auf den Link
+                        um die Aktualisierung Ihres Abonnements zur bestätigen."""
+
+    try:
+        user = Marker(**marker_data)
+        session.add(user)
+        session.commit()
+        send_marker_email(marker_data)
+        if marker_data['method'] == 'delete':
+            message = message_delete
+        else:
+            message = message_update
+        ret = ResultModel(httpstatus = 200,
+                          message = message,
+                          retcode = retcode)
+        return ret
+
+    except SQLAlchemyError as e:
+        session.rollback()
+        ret = ResultModel(httpstatus = 500,
+                          message = "Fehler bei der Speicherung Ihrer Daten, bitte versuchen Sie es\
+                                     zu einem späteren Zeitpunkt noch einmal",
+                          errormessage = f"Failed to insert data {e}")
+        return ret
+
+    finally:
+        if session:
+            session.close()
+
+def check_marking(retcode):
+
+    session = Session()
+    marker = session.query(Marker).filter(Marker.retcode == retcode).first()
+    email = marker.email
+    method = marker.method
+    object_to_delete = session.query(Abo).filter(Abo.email == email).first()
+    if object_to_delete:
+        session.delete(object_to_delete)
+        session.commit()
+        session.close()
+    datadict = vars(marker)
+    del datadict['retcode']
+    del datadict['method']
+    del datadict['_sa_instance_state']
+    if method == 'update':
+        data = insert_abo_data(datadict)
+        if data.httpstatus == 200:
+            return method
+    elif method == 'delete':
+        return method
+    return False
+
+def check_refresh(method, retcode, now):
+    session = Session()
+    refresher = session.query(Refresher).filter(Refresher.retcode == retcode).first()
+    email = refresher.email
+    original = session.query(Abo).filter(Abo.email == email).first()
+    if method == 'delete':
+        object_to_delete = session.query(Abo).filter(Abo.email == email).first()
+        if object_to_delete:
+            session.delete(object_to_delete)
+            session.delete(refresher)
+            session.commit()
+            return method
+    elif method == 'refresh':
+        original.refresh = now
+        session.commit()
+        return method   
+    session.close()
+    return False
+
+def return_template(method):
+    path = os.path.dirname(__file__)
+    path += f'/templates/{method}.html'
+    file = open(path, 'rb')
+    htmltext = file.read().decode('utf-8')
+    return htmltext
