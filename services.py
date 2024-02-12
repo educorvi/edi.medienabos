@@ -1,7 +1,7 @@
 import os
 import hashlib
 import random
-from models import Base, Abo, Subscriber, ResultModel, Marker, Refresher
+from models import Base, Abo, Subscriber, Abonnent, ResultModel, Marker, Refresher
 from sqlalchemy import create_engine, select, inspect
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
@@ -14,6 +14,7 @@ Session = sessionmaker(bind=engine)
 if not database_exists:
     Base.metadata.create_all(engine)
 
+
 def generate_retcode(email):
     random_number = random.randint(10000, 99999)
     combined_string = f"{email}{random_number}"
@@ -21,13 +22,16 @@ def generate_retcode(email):
     retcode = hash_object.hexdigest()
     return retcode
 
+
 def send_subscriber_email(abo_data):
     print('in dieser Funktion wird die E-Mail gesendet')
     #TODO Implementierung einer Funktion für das Senden einer E-Mail
 
+
 def send_marker_email(abo_data):
     print('in dieser Funktion wird die E-Mail gesendet')
     #TODO Implementierung einer Funktion für das Senden einer E-Mail
+
 
 def insert_abo_data(abo_data):
 
@@ -50,6 +54,48 @@ def insert_abo_data(abo_data):
     finally:
         if session:
             session.close()
+
+
+def get_abo_data(request_data):
+    
+    session = Session()
+    email = request_data.email
+    abonnent = session.query(Abo).filter(Abo.email == email).first()
+    if abonnent:
+        datadict = vars(abonnent)
+        del datadict['id']
+        del datadict['_sa_instance_state']
+        return Abonnent(**datadict)
+    session.close()
+
+
+def update_abo_data(abo_data):
+
+    session = Session()
+    email = abo_data['email']
+    abonnent = session.query(Abo).filter(Abo.email == email).first()
+    if abonnent:
+        try:
+            for key, value in abo_data.items():
+                setattr(abonnent, key, value)
+            session.commit()
+            ret = ResultModel(httpstatus = 200,
+                              message = "Ihre Daten wurden erfolgreich in unserer Datenbank gespeichert.")
+        except SQLAlchemyError as e:
+            session.rollback()
+            ret = ResultModel(httpstatus = 500,
+                          message = "Fehler bei der Speicherung Ihrer Daten, bitte versuchen Sie es zu einem späteren Zeitpunkt noch einmal",
+                          errormessage = f"Failed to insert data {e}")
+
+        finally:
+            return ret
+            if session:
+                session.close()
+
+    ret = ResultModel(httpstatus = 500,
+                      message = "Fehler bei der Aktualisierung Ihrer Daten, bitte versuchen Sie\
+                                 es zu einem späteren Zeitpunkt noch einmal",
+                      errormessage = f"Abonnent entry not found in database.")
 
 
 def insert_subscriber_data(abo_data):
@@ -97,6 +143,7 @@ def insert_subscriber_data(abo_data):
         if session:
             session.close()
 
+
 def check_subscription(retcode):
 
     session = Session()
@@ -111,6 +158,7 @@ def check_subscription(retcode):
         if data.httpstatus == 200:
             return 'thankyou'
     return False
+
 
 def insert_marker_data(marker_data):
 
@@ -167,6 +215,7 @@ def insert_marker_data(marker_data):
     finally:
         if session:
             session.close()
+
 
 def check_marking(retcode):
 

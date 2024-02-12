@@ -53,7 +53,7 @@ class Abonnent(BaseModel):
     titel: Optional[Literal["Dr.", "Prof."]] = Field(title="Akademischer Titel", default=None)
     vorname : str = Field(title=u"Vorname des Verantwortlichen für die Applikation")
     name : str = Field(title=u"Name des Verantwortlichen für die Applikation")
-    email : EmailStr = Field(title=u"Versandadresse: E-Mail-Adresse")
+    email : EmailStr = Field(title=u"E-Mail-Adresse")
     versand_name : Optional[str] = Field(title="Versandadresse: Abweichender Name oder Firmenname", default=None)
     versand_strhnr : Optional[str] = Field(title=u"Versandadresse: Straße und Hausnummer", default=None)
     versand_plz : Optional[str] = Field(title=u"Versandadresse: Postleitzahl, optional inkl. Länderkennung, z.B. DE-90763", default=None)
@@ -61,6 +61,13 @@ class Abonnent(BaseModel):
     etem : int = Field(title="Anzahl der Abonnements der Zeitschrift etem", default=0) 
     profi : int = Field(title="Anzahl der Abonnements der Zeitschrift profi", default=0) 
     medien : dict = Field(title="Dictionary mit Angaben zu den abonnierten Medien")
+
+class RequestModel(BaseModel):
+    """
+    Datenmodell für die Abfrage eines Abonnements
+    """
+    email : EmailStr = Field(title=u"E-Mail-Adresse")
+    
 
 class ResultModel(BaseModel):
     """
